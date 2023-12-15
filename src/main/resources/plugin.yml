@@ -1,3 +1,8 @@
 name: GANOMplayer
 version: 1.0
 main: kr.ziho.ganomplayer.GANOMPlayer
+commands:
+  ganom:
+    description: Manage GANOM AI Players
+    usage: /ganom add <name> <x> <y> <z> (<world>) | /ganom remove <name>
+    permission: ganomplayer.ganomcommandpermission

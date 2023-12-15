@@ -36,5 +36,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
-/spigot-1.7.10-SNAPSHOT-b1657.jar
+
 /.idea/
+/spigot-1.8.8-R0.1-SNAPSHOT-latest.jar
