@@ -22,6 +22,13 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/spigot-1.8.8-R0.1-SNAPSHOT-latest.jar</systemPath>
         </dependency>
+        <dependency>
+            <groupId>net.citizensnpcs</groupId>
+            <artifactId>citizensapi</artifactId>
+            <version>2.0.33-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/citizensapi-2.0.33-SNAPSHOT.jar</systemPath>
+        </dependency>
     </dependencies>
 
 </project>

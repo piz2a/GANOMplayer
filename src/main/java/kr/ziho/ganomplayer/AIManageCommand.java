@@ -1,5 +1,7 @@
 package kr.ziho.ganomplayer;
 
+import net.citizensnpcs.api.CitizensAPI;
+import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -7,6 +9,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
 public class AIManageCommand implements CommandExecutor {
@@ -32,7 +35,9 @@ public class AIManageCommand implements CommandExecutor {
             if (strings[0].equals("add"))
                 return add(commandSender, strings);
             else if (strings[0].equals("remove"))
-                return remove(strings);
+                return remove(commandSender, strings);
+            else if (strings[0].equals("train"))
+                return train(commandSender, strings);
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -64,15 +69,37 @@ public class AIManageCommand implements CommandExecutor {
         return true;
     }
 
-    private boolean remove(String[] strings) {
+    private boolean remove(CommandSender commandSender, String[] strings) {
         // Usage: /ganom remove Notch
         if (strings.length != 2) return false;
         for (AIPlayer aiPlayer : plugin.aiPlayers) {
             if (strings[1].equals(aiPlayer.getName())) {
                 aiPlayer.remove();
                 plugin.aiPlayers.remove(aiPlayer);
+                return true;
             }
         }
+        commandSender.sendMessage(ChatColor.RED + "The AIPlayer with given name doesn't exist.");
+        return true;
+    }
+
+    private boolean train(CommandSender commandSender, String[] strings) {
+        // Usage: /ganom train Notch
+        if (strings.length != 2) return false;
+        AIPlayer aiPlayer = null;
+        for (AIPlayer iter : plugin.aiPlayers) {
+            if (strings[1].equals(iter.getName())) {
+                aiPlayer = iter;
+                break;
+            }
+        }
+        if (aiPlayer == null) {
+            commandSender.sendMessage(ChatColor.RED + "The AIPlayer with given name doesn't exist.");
+            return true;
+        }
+        Connection connection = new Connection(plugin, aiPlayer);
+        connection.start();
+        plugin.connections.add(connection);
         return true;
     }
 

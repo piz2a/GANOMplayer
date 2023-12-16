@@ -1,3 +1,3 @@
-# GANOMPlayer
+# GANOMplayer
 
 Minecraft Plugin using GAN

@@ -48,6 +48,10 @@ public class AIPlayer extends EntityPlayer {
         return this.getId() == et.getId(); // check if it's this entity
     }
 
+    public String getData() {
+        return "";
+    }
+
     public static AIPlayer create(Location loc, String name) {
         // get NMS world
         WorldServer nmsWorld = ((CraftWorld) loc.getWorld()).getHandle();
