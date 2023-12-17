@@ -48,33 +48,43 @@ public class AIManageCommand implements CommandExecutor {
     private boolean add(CommandSender commandSender, String[] strings) {
         // Usage: /ganom add Notch 1 2 3 (world)
         World spawnWorld = strings.length == 6 ? plugin.getServer().getWorld(strings[5]) : null;
-        if (strings.length != 5 && strings.length != 6) return false;
-        if (strings.length == 5) {
+        if (strings.length != 5 && strings.length != 6 && strings.length != 2) return false;
+        if (strings.length == 5 || strings.length == 2) {
             spawnWorld = commandSender instanceof Player ?
                     ((Player) commandSender).getWorld() : plugin.getServer().getWorld("world");
         }
-        Location spawnLocation = new Location(
-                spawnWorld,
-                Double.parseDouble(strings[2]),
-                Double.parseDouble(strings[3]),
-                Double.parseDouble(strings[4])
-        );
-        for (AIPlayer aiPlayer : plugin.aiPlayers) {
+        Location spawnLocation;
+        if (strings.length == 2) {
+            if (commandSender instanceof Player)
+                spawnLocation = ((Player) commandSender).getLocation();
+            else return false;
+        } else {
+            spawnLocation = new Location(
+                    spawnWorld,
+                    Double.parseDouble(strings[2]),
+                    Double.parseDouble(strings[3]),
+                    Double.parseDouble(strings[4])
+            );
+        }
+        for (NPC aiPlayer : plugin.aiPlayers) {
             if (strings[1].equals(aiPlayer.getName())) {
                 commandSender.sendMessage(ChatColor.RED + "The AIPlayer with given name already exists.");
                 return true;
             }
         }
-        plugin.aiPlayers.add(AIPlayer.create(spawnLocation, strings[1]));
+        NPC newNpc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, strings[1]);
+        AIPlayer.initNPC(newNpc);
+        newNpc.spawn(spawnLocation);
+        plugin.aiPlayers.add(newNpc);
         return true;
     }
 
     private boolean remove(CommandSender commandSender, String[] strings) {
         // Usage: /ganom remove Notch
         if (strings.length != 2) return false;
-        for (AIPlayer aiPlayer : plugin.aiPlayers) {
+        for (NPC aiPlayer : plugin.aiPlayers) {
             if (strings[1].equals(aiPlayer.getName())) {
-                aiPlayer.remove();
+                aiPlayer.destroy();
                 plugin.aiPlayers.remove(aiPlayer);
                 return true;
             }
@@ -86,8 +96,8 @@ public class AIManageCommand implements CommandExecutor {
     private boolean train(CommandSender commandSender, String[] strings) {
         // Usage: /ganom train Notch
         if (strings.length != 2) return false;
-        AIPlayer aiPlayer = null;
-        for (AIPlayer iter : plugin.aiPlayers) {
+        NPC aiPlayer = null;
+        for (NPC iter : plugin.aiPlayers) {
             if (strings[1].equals(iter.getName())) {
                 aiPlayer = iter;
                 break;

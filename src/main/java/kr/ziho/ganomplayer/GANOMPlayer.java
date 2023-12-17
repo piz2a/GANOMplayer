@@ -1,5 +1,6 @@
 package kr.ziho.ganomplayer;
 
+import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -8,7 +9,7 @@ import java.util.Vector;
 public class GANOMPlayer extends JavaPlugin {
 
     FileConfiguration config = getConfig();
-    Vector<AIPlayer> aiPlayers = new Vector<>();
+    Vector<NPC> aiPlayers = new Vector<>();
     Vector<Connection> connections = new Vector<>();
 
     @Override
