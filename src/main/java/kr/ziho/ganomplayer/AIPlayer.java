@@ -1,14 +1,16 @@
 package kr.ziho.ganomplayer;
 
 import net.citizensnpcs.api.npc.NPC;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 public class AIPlayer {
 
-    public static void initNPC(NPC npc) {
+    public static void initNPC(NPC npc, Location spawnLocation) {
         npc.setFlyable(false);
         npc.setProtected(false);
         npc.setUseMinecraftAI(true);
+        npc.spawn(spawnLocation);
         Player player = (Player) npc.getEntity();
         player.setCanPickupItems(true);
     }

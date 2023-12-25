@@ -5,7 +5,7 @@ import org.bukkit.inventory.ItemStack;
 
 public enum ItemLimited {
 
-    OTHER(0), BLOCK(1), SWORD(2), PICKAXE(3), AXE(4);
+    OTHER(0), BLOCK(1), SWORD(2), PICKAXE(3), AXE(4), AIR(5);
 
     private final int value;
 
@@ -16,6 +16,8 @@ public enum ItemLimited {
     public static ItemLimited from(ItemStack itemStack) {
         Material material = itemStack.getType();
         switch (material) {
+            case AIR:
+                return AIR;
             case WOOD_SWORD: case STONE_SWORD: case GOLD_SWORD: case IRON_SWORD: case DIAMOND_SWORD:
                 return SWORD;
             case WOOD_PICKAXE: case STONE_PICKAXE: case GOLD_PICKAXE: case IRON_PICKAXE: case DIAMOND_PICKAXE:

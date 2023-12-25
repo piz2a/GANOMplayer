@@ -1,6 +1,5 @@
 package kr.ziho.ganomplayer;
 
-import kr.ziho.ganomplayer.bahavior.PlayerBehavior;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.ChatColor;
@@ -12,8 +11,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-
-import java.util.Vector;
 
 public class AIManageCommand implements CommandExecutor {
 
@@ -49,7 +46,7 @@ public class AIManageCommand implements CommandExecutor {
     }
 
     private boolean add(CommandSender commandSender, String[] strings) {
-        // Usage: /ganom add Notch 1 2 3 (world)
+        // Usage: /ganom add Notch x y z (world)
         World spawnWorld = strings.length == 6 ? plugin.getServer().getWorld(strings[5]) : null;
         if (strings.length != 5 && strings.length != 6 && strings.length != 2) return false;
         if (strings.length == 5 || strings.length == 2) {
@@ -76,13 +73,8 @@ public class AIManageCommand implements CommandExecutor {
             }
         }
         NPC newNpc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, strings[1]);
-        AIPlayer.initNPC(newNpc);
-        newNpc.spawn(spawnLocation);
+        AIPlayer.initNPC(newNpc, spawnLocation);
         plugin.aiPlayers.add(newNpc);
-
-        PlayerBehavior<Boolean> allowFlight = new PlayerBehavior<>(Player::getAllowFlight, Player::setAllowFlight);
-        PlayerBehavior<Float> walkSpeed = new PlayerBehavior<>(Player::getWalkSpeed, Player::setWalkSpeed);
-
         return true;
     }
 
@@ -101,11 +93,11 @@ public class AIManageCommand implements CommandExecutor {
     }
 
     private boolean train(CommandSender commandSender, String[] strings) {
-        // Usage: /ganom train Notch
-        if (strings.length != 2) return false;
+        // Usage: /ganom train start/stop Notch
+        if (strings.length != 3) return false;
         NPC aiPlayer = null;
         for (NPC iter : plugin.aiPlayers) {
-            if (strings[1].equals(iter.getName())) {
+            if (strings[2].equals(iter.getName())) {
                 aiPlayer = iter;
                 break;
             }
@@ -114,9 +106,20 @@ public class AIManageCommand implements CommandExecutor {
             commandSender.sendMessage(ChatColor.RED + "The AIPlayer with given name doesn't exist.");
             return true;
         }
-        Connection connection = new Connection(plugin, aiPlayer);
-        connection.start();
-        plugin.connections.add(connection);
+        if (strings[1].equals("start")) {
+            Connection connection = new Connection(plugin, (Player) aiPlayer.getEntity());
+            connection.start();
+            plugin.connections.add(connection);
+            commandSender.sendMessage(ChatColor.GREEN + "Training with " + strings[2] + " started!");
+        } else if (strings[1].equals("stop")) {
+            for (Connection connection : plugin.connections) {
+                if (connection.getAIName().equals(aiPlayer.getName())) {
+                    connection.stop();
+                    commandSender.sendMessage(ChatColor.GREEN + "Training with " + strings[2] + " stopped.");
+                    break;
+                }
+            }
+        }
         return true;
     }
 
