@@ -75,6 +75,7 @@ public class AIManageCommand implements CommandExecutor {
         NPC newNpc = CitizensAPI.getNPCRegistry().createNPC(EntityType.PLAYER, strings[1]);
         AIPlayer.initNPC(newNpc, spawnLocation);
         plugin.aiPlayers.add(newNpc);
+        commandSender.sendMessage(ChatColor.GREEN + "Successfully added AIPlayer named " + newNpc.getName());
         return true;
     }
 
@@ -85,6 +86,7 @@ public class AIManageCommand implements CommandExecutor {
             if (strings[1].equals(aiPlayer.getName())) {
                 aiPlayer.destroy();
                 plugin.aiPlayers.remove(aiPlayer);
+                commandSender.sendMessage(ChatColor.GREEN + "Successfully removed AIPlayer named " + strings[1]);
                 return true;
             }
         }
