@@ -1,0 +1,50 @@
+package kr.ziho.ganomplayer;
+
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+
+public enum ItemLimited {
+
+    OTHER(0), BLOCK(1), SWORD(2), PICKAXE(3), AXE(4);
+
+    private final int value;
+
+    ItemLimited(int value) {
+        this.value = value;
+    }
+
+    public static ItemLimited from(ItemStack itemStack) {
+        Material material = itemStack.getType();
+        switch (material) {
+            case WOOD_SWORD: case STONE_SWORD: case GOLD_SWORD: case IRON_SWORD: case DIAMOND_SWORD:
+                return SWORD;
+            case WOOD_PICKAXE: case STONE_PICKAXE: case GOLD_PICKAXE: case IRON_PICKAXE: case DIAMOND_PICKAXE:
+                return PICKAXE;
+            case WOOD_AXE: case STONE_AXE: case GOLD_AXE: case IRON_AXE: case DIAMOND_AXE:
+                return AXE;
+        }
+        if (material.isBlock())
+            return BLOCK;
+        return OTHER;
+    }
+
+    public ItemStack toItemStack() {
+        switch (this) {
+            case BLOCK:
+                return new ItemStack(Material.COBBLESTONE, 64);
+            case SWORD:
+                return new ItemStack(Material.STONE_SWORD);
+            case PICKAXE:
+                return new ItemStack(Material.IRON_PICKAXE);
+            case AXE:
+                return new ItemStack(Material.IRON_AXE);
+            default:
+                return null;
+        }
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+}
