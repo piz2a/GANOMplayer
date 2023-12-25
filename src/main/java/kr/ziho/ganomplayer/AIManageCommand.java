@@ -1,5 +1,6 @@
 package kr.ziho.ganomplayer;
 
+import kr.ziho.ganomplayer.bahavior.PlayerBehavior;
 import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.ChatColor;
@@ -11,6 +12,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+
+import java.util.Vector;
 
 public class AIManageCommand implements CommandExecutor {
 
@@ -76,6 +79,10 @@ public class AIManageCommand implements CommandExecutor {
         AIPlayer.initNPC(newNpc);
         newNpc.spawn(spawnLocation);
         plugin.aiPlayers.add(newNpc);
+
+        PlayerBehavior<Boolean> allowFlight = new PlayerBehavior<>(Player::getAllowFlight, Player::setAllowFlight);
+        PlayerBehavior<Float> walkSpeed = new PlayerBehavior<>(Player::getWalkSpeed, Player::setWalkSpeed);
+
         return true;
     }
 

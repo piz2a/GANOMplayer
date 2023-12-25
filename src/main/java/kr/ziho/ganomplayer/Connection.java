@@ -3,7 +3,6 @@ package kr.ziho.ganomplayer;
 import net.citizensnpcs.api.npc.NPC;
 
 import java.io.*;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
@@ -11,7 +10,6 @@ public class Connection {
 
     private final GANOMPlayer plugin;
     private final NPC aiPlayer;
-    private InetSocketAddress ipep;
     private Socket socket;
     private Thread socketThread;
     private boolean running = false;
@@ -29,6 +27,10 @@ public class Connection {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean isAlive() {
+        return socketThread.isAlive();
     }
 
     private class SocketThread implements Runnable {
