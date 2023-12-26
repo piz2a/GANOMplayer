@@ -3,5 +3,7 @@
 Minecraft Plugin using GAN
 
 ### TODO
-- [ ] Socket connection
+- [X] Socket connection
 - [X] NPC
+- [ ] Behavior bug fix
+- [ ] SkyWars
