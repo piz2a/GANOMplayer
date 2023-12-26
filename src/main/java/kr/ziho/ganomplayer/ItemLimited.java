@@ -3,6 +3,9 @@ package kr.ziho.ganomplayer;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum ItemLimited {
 
     OTHER(0), BLOCK(1), SWORD(2), PICKAXE(3), AXE(4), AIR(5);
@@ -11,6 +14,18 @@ public enum ItemLimited {
 
     ItemLimited(int value) {
         this.value = value;
+    }
+
+    static Map<Integer, ItemLimited> map = new HashMap<>();
+
+    static {
+        for (ItemLimited itemLimited : ItemLimited.values()) {
+            map.put(itemLimited.value, itemLimited);
+        }
+    }
+
+    public static ItemLimited from(int code) {
+        return map.get(code);
     }
 
     public static ItemLimited from(ItemStack itemStack) {

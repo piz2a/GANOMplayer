@@ -14,6 +14,7 @@ public class GANOMPlayer extends JavaPlugin {
     @Override
     public void onEnable() {
         getLogger().info("Enabling \"/ganom\" command");
+        getLogger().info("test");
         getCommand("ganom").setExecutor(new AIManageCommand(this));
 
         FileConfiguration config = getConfig();
