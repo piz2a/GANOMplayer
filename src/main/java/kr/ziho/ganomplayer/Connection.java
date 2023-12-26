@@ -60,7 +60,7 @@ public class Connection {
             int framesInTimeline = plugin.getConfig().getInt("framesInTimeline");
             int frameInterval = plugin.getConfig().getInt("frameInterval");
             try (InputStream in = socket.getInputStream(); OutputStream out = socket.getOutputStream()) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in), 4096);
                 PrintWriter writer = new PrintWriter(out, true);
                 double startTime = System.currentTimeMillis();
                 while (running) {
@@ -84,7 +84,6 @@ public class Connection {
                             e.printStackTrace();
                             behave = false;
                         }
-
 
                         // Create new JSONObject to send
                         JSONObject timelineJson = new JSONObject();

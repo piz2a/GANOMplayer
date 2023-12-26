@@ -88,8 +88,8 @@ public class PlayerBehavior extends JSONObject {
 
         // Rotation + Head Rotation
         JSONArray locationArray = (JSONArray) jsonObject.get("location");
-        float yaw = (float) locationArray.get(3);
-        float pitch = (float) locationArray.get(4);
+        float yaw = ((Double) locationArray.get(3)).floatValue();
+        float pitch = ((Double) locationArray.get(4)).floatValue();
         int entityID = player.getEntityId();
         PacketPlayOutEntityLook packet = new PacketPlayOutEntityLook(entityID, getFixRotation(yaw), getFixRotation(pitch), true);
         PacketPlayOutEntityHeadRotation packetHead = new PacketPlayOutEntityHeadRotation();

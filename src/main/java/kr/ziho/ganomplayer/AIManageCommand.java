@@ -36,12 +36,14 @@ public class AIManageCommand implements CommandExecutor {
         if (strings.length == 0) return false;
         try {
             // for (int i = 0; i < strings.length; i++) commandSender.sendMessage(i + " " + strings[i]);
-            if (strings[0].equals("add"))
-                return add(commandSender, strings);
-            else if (strings[0].equals("remove"))
-                return remove(commandSender, strings);
-            else if (strings[0].equals("train"))
-                return train(commandSender, strings);
+            switch (strings[0]) {
+                case "add":
+                    return add(commandSender, strings);
+                case "remove":
+                    return remove(commandSender, strings);
+                case "train":
+                    return train(commandSender, strings);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -141,6 +143,7 @@ public class AIManageCommand implements CommandExecutor {
                         commandSender.sendMessage(ChatColor.RED + "Training with " + strings[2] + " had already stopped.");
                     } else {
                         connection.stop();
+                        plugin.connections.remove(connection);
                         commandSender.sendMessage(ChatColor.GREEN + "Training with " + strings[2] + " has stopped.");
                     }
                     break;
