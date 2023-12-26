@@ -14,6 +14,8 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
+import java.io.IOException;
+
 public class AIManageCommand implements CommandExecutor {
 
     private final GANOMPlayer plugin;
@@ -69,7 +71,7 @@ public class AIManageCommand implements CommandExecutor {
             );
         }
         for (NPC aiPlayer : plugin.aiPlayers) {
-            if (strings[1].equals(aiPlayer.getName())) {
+            if (strings[1].equalsIgnoreCase(aiPlayer.getName())) {
                 commandSender.sendMessage(ChatColor.RED + "The AIPlayer with given name already exists.");
                 return true;
             }
@@ -124,9 +126,13 @@ public class AIManageCommand implements CommandExecutor {
                 else return false;
             } else realPlayer = Bukkit.getPlayer(strings[3]);
             Connection connection = new Connection(plugin, (Player) aiPlayer.getEntity(), realPlayer);
-            connection.start();
-            plugin.connections.add(connection);
-            commandSender.sendMessage(ChatColor.GREEN + "Training with " + strings[2] + " has started!");
+            try {
+                connection.start();
+                plugin.connections.add(connection);
+                commandSender.sendMessage(ChatColor.GREEN + "Training with " + strings[2] + " has started!");
+            } catch (IOException e) {
+                commandSender.sendMessage(ChatColor.RED + "Failed to start training: Connection refused");
+            }
         } else if (strings[1].equals("stop")) {
             if (strings.length != 3) return false;
             for (Connection connection : plugin.connections) {

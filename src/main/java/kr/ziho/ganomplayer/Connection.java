@@ -10,7 +10,6 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.charset.StandardCharsets;
 
 public class Connection {
 
@@ -28,20 +27,21 @@ public class Connection {
         this.realPlayer = realPlayer;
     }
 
-    public void start() {
-        try {
-            socket = new Socket();
-            address = new InetSocketAddress(plugin.getConfig().getString("host"), plugin.getConfig().getInt("port"));
-            socket.connect(address);
+    public void start() throws IOException {
+        socket = new Socket();
+        address = new InetSocketAddress(plugin.getConfig().getString("host"), plugin.getConfig().getInt("port"));
+        socket.connect(address);
 
-            socketThread = new Thread(new SocketThread());
-            socketThread.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        socketThread = new Thread(new SocketThread());
+        socketThread.start();
     }
 
     public void stop() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         running = false;
     }
 
@@ -65,6 +65,10 @@ public class Connection {
                 double startTime = System.currentTimeMillis();
                 while (running) {
                     try {
+                        // Reconnect if connection was lost
+                        if (!socket.isConnected())
+                            socket.connect(address);
+
                         int count = 1;
 
                         // Receive
@@ -80,6 +84,7 @@ public class Connection {
                             e.printStackTrace();
                             behave = false;
                         }
+
 
                         // Create new JSONObject to send
                         JSONObject timelineJson = new JSONObject();
@@ -104,7 +109,6 @@ public class Connection {
                         aiPlayer.chat(outputMessage);
                         writer.println(outputMessage);
                     } catch (IOException e) {
-                        System.out.println("Exception");
                         e.printStackTrace();
                     }
                 }

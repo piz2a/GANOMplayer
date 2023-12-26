@@ -75,7 +75,7 @@ public class PlayerBehavior extends JSONObject {
         player.setSprinting((boolean) jsonObject.get("sprinting"));
 
         // Item in hand
-        player.setItemInHand(ItemLimited.from((int) jsonObject.get("itemInHand")).toItemStack());
+        player.setItemInHand(ItemLimited.from(((Long) jsonObject.get("itemInHand")).intValue()).toItemStack());
 
         // Velocity
         JSONArray velocityArray = (JSONArray) jsonObject.get("velocity");
