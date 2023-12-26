@@ -18,7 +18,6 @@ public class Connection {
     private final Player realPlayer;
     private Socket socket;
     private SocketAddress address;
-    private Thread socketThread;
     private boolean running = false;
 
     public Connection(GANOMPlayer plugin, Player aiPlayer, Player realPlayer) {
@@ -32,7 +31,7 @@ public class Connection {
         address = new InetSocketAddress(plugin.getConfig().getString("host"), plugin.getConfig().getInt("port"));
         socket.connect(address);
 
-        socketThread = new Thread(new SocketThread());
+        Thread socketThread = new Thread(new SocketThread());
         socketThread.start();
     }
 
@@ -60,7 +59,7 @@ public class Connection {
             int framesInTimeline = plugin.getConfig().getInt("framesInTimeline");
             int frameInterval = plugin.getConfig().getInt("frameInterval");
             try (InputStream in = socket.getInputStream(); OutputStream out = socket.getOutputStream()) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(in), 4096);
                 PrintWriter writer = new PrintWriter(out, true);
                 double startTime = System.currentTimeMillis();
                 while (running) {
@@ -85,7 +84,6 @@ public class Connection {
                             behave = false;
                         }
 
-
                         // Create new JSONObject to send
                         JSONObject timelineJson = new JSONObject();
                         timelineJson.put("framesInTimeline", framesInTimeline);
@@ -106,7 +104,7 @@ public class Connection {
 
                         timelineJson.put("frames", timelineArray);
                         String outputMessage = timelineJson.toString();
-                        aiPlayer.chat(outputMessage);
+                        // aiPlayer.chat(outputMessage);
                         writer.println(outputMessage);
                     } catch (IOException e) {
                         e.printStackTrace();
