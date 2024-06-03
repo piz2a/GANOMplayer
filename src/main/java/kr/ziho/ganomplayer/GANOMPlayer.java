@@ -4,12 +4,15 @@ import net.citizensnpcs.api.npc.NPC;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.HashMap;
+import java.util.UUID;
 import java.util.Vector;
 
 public class GANOMPlayer extends JavaPlugin {
 
     Vector<NPC> aiPlayers = new Vector<>();
     Vector<Connection> connections = new Vector<>();
+    HashMap<UUID, Boolean> damageMap = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -24,6 +27,8 @@ public class GANOMPlayer extends JavaPlugin {
         config.addDefault("frameInterval", 100);  // microseconds
         config.options().copyDefaults(true);
         saveConfig();
+
+        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
     }
     @Override
     public void onDisable() {

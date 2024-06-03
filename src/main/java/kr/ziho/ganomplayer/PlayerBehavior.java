@@ -14,64 +14,59 @@ import org.json.simple.JSONObject;
 
 import java.lang.reflect.Field;
 
+
 /*
- * Excluding:
- * - Potion effects
- * - Exhaustion
- * - Saturation
- * - Statistics
- * - Exp
- * - Chat
- * - Chest & Ender chest
- * - Metadata
- * - Worlds (Nether, The End)
- * - Enchanting
- * - Changing max health
- * - Passengers
- * - Projectile
- * - Vehicle
- * - Equipment
- * - Blocking
- * - Sleeping
- * - Farming
- * - Walk speed change
- */
+input
+- isOnDamage [bool]
+- isOnGround [bool]
+- isSneaking [bool]
+- isSprinting [bool]
+- pitch [float]
+- velocity (yaw-relative) [float, float, float]
+
+output
+- rotation (yaw, pitch) [float, float]
+- velocity (x, y, z) [float, float, float]
+- isSneaking [bool]
+- isSprinting [bool]
+- attackIndex [int]
+*/
 
 public class PlayerBehavior extends JSONObject {
 
-    public PlayerBehavior(Player player) {
+    public static final boolean mirrorTest = true;
+
+    public PlayerBehavior(Player player, GANOMPlayer plugin) {
         super();
+        put("isOnDamage", plugin.damageMap.get(player.getUniqueId()));
         put("isOnGround", ((LivingEntity) player).isOnGround());
-        put("sneaking", player.isSneaking());
-        put("sprinting", player.isSprinting());
+        put("isSneaking", player.isSneaking());
+        put("isSprinting", player.isSprinting());
 
         put("lastDamage", player.getLastDamage());
         put("health", player.getHealth());
 
         put("itemInHand", ItemLimited.from(player.getItemInHand()).getValue());
 
-        Vector velocity = player.getVelocity();
-        put("velocity", new JSONArray() {{
-            add(velocity.getX());
-            add(velocity.getY());
-            add(velocity.getZ());
-        }});
-
         Location location = player.getLocation();
-        put("location", new JSONArray() {{
-            add(location.getX());
-            add(location.getY());
-            add(location.getZ());
-            add(location.getYaw());
-            add(location.getPitch());
+        put("pitch", location.getPitch());
+
+        Vector velocity = player.getVelocity();
+        put("velocity", new JSONArray() {{  // yaw-relative velocity
+            double x = velocity.getX(), z = velocity.getZ();
+            double yaw = location.getYaw();
+            double sin = Math.sin(yaw), cos = Math.cos(yaw);
+            add(x * cos - z * sin);  // right-side
+            add(velocity.getY());  // y
+            add(z * cos - x * sin);  // front-side
         }});
     }
 
     // Make player follow the instructions included in jsonObject
     public static void behave(Player player, JSONObject jsonObject) {
         // Sneaking & Sprinting
-        player.setSneaking((boolean) jsonObject.get("sneaking"));
-        player.setSprinting((boolean) jsonObject.get("sprinting"));
+        player.setSneaking((boolean) jsonObject.get("isSneaking"));
+        player.setSprinting((boolean) jsonObject.get("isSprinting"));
 
         // Item in hand
         player.setItemInHand(ItemLimited.from(((Long) jsonObject.get("itemInHand")).intValue()).toItemStack());
@@ -79,16 +74,24 @@ public class PlayerBehavior extends JSONObject {
         // Velocity
         JSONArray velocityArray = (JSONArray) jsonObject.get("velocity");
         float walkSpeed = 1;  // player.getWalkSpeed();
-        player.setVelocity(new Vector(
+        Vector newVelocity = new Vector(
                 ((double) velocityArray.get(0)) * walkSpeed,
                 (double) velocityArray.get(1),
                 ((double) velocityArray.get(2)) * walkSpeed
-        ));
+        );
+        player.setVelocity(newVelocity);
 
         // Rotation + Head Rotation
-        JSONArray locationArray = (JSONArray) jsonObject.get("location");
-        float yaw = ((Double) locationArray.get(3)).floatValue();
-        float pitch = ((Double) locationArray.get(4)).floatValue();
+        float yaw, pitch;
+        if (mirrorTest) {
+            yaw = player.getLocation().getYaw();
+            pitch = (float) jsonObject.get("pitch");
+        } else {
+            JSONArray locationArray = (JSONArray) jsonObject.get("rotation");
+            yaw = ((Double) locationArray.get(0)).floatValue();
+            pitch = ((Double) locationArray.get(1)).floatValue();
+        }
+
         int entityID = player.getEntityId();
         PacketPlayOutEntityLook packet = new PacketPlayOutEntityLook(entityID, getFixRotation(yaw), getFixRotation(pitch), true);
         PacketPlayOutEntityHeadRotation packetHead = new PacketPlayOutEntityHeadRotation();
@@ -96,6 +99,15 @@ public class PlayerBehavior extends JSONObject {
         setValue(packetHead, "b", getFixRotation(yaw));
         sendPacket(packet);
         sendPacket(packetHead);
+        /*
+        sendPacket(new PacketPlayOutEntity.PacketPlayOutRelEntityMove(
+                entityID,
+                (byte) (128 * 32 * newVelocity.getX()),
+                (byte) (128 * 32 * newVelocity.getY()),
+                (byte) (128 * 32 * newVelocity.getZ()),
+                true
+        ));
+        */
     }
 
     public static void setValue(Object obj, String name, Object value){
@@ -108,13 +120,13 @@ public class PlayerBehavior extends JSONObject {
         }
     }
 
-    public static void sendPacket(Packet<?> packet,Player player){
+    public static void sendPacket(Packet<?> packet, Player player){
         ((CraftPlayer)player).getHandle().playerConnection.sendPacket(packet);
     }
 
     public static void sendPacket(Packet<?> packet){
         for (Player player : Bukkit.getOnlinePlayers()){
-            sendPacket(packet,player);
+            sendPacket(packet, player);
         }
     }
 

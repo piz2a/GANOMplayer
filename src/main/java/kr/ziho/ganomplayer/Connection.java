@@ -53,6 +53,9 @@ public class Connection {
     }
 
     private class SocketThread implements Runnable {
+
+        boolean behave = true;  // false;  // Now forge mod makes ai player behave
+
         @Override
         public void run() {
             running = true;
@@ -70,42 +73,34 @@ public class Connection {
 
                         int count = 1;
 
-                        // Receive
-                        System.out.println("receiving...");
-                        String line = reader.readLine();
-                        System.out.println("readLine: " + line);
-                        boolean behave = true;
-                        JSONArray frames = new JSONArray();
-                        try {
-                            JSONObject receivedJson = (JSONObject) new JSONParser().parse(line);
-                            frames = (JSONArray) receivedJson.get("frames");
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                            behave = false;
-                        }
+                        // Send first behavior
+                        writer.println(new PlayerBehavior(realPlayer, plugin));
 
                         // Create new JSONObject to send
-                        JSONObject timelineJson = new JSONObject();
-                        timelineJson.put("framesInTimeline", framesInTimeline);
-                        timelineJson.put("frameInterval", frameInterval);
-                        JSONArray timelineArray = new JSONArray();
-                        while (count <= framesInTimeline) {
-                            if (System.currentTimeMillis() >= startTime + frameInterval * count) {
-                                // Collect data from player
-                                timelineArray.add(new PlayerBehavior(realPlayer));
-                                // Make AI behave
+                        while (count <= framesInTimeline) {  // iterate 10 times
+                            if (System.currentTimeMillis() < startTime + frameInterval * count)
+                                continue;
+
+                            /* Make AI behave */
+                            String line = reader.readLine();
+                            // System.out.println("readLine: " + line);
+                            JSONArray frames = new JSONArray();
+                            try {
+                                JSONObject receivedJson = (JSONObject) new JSONParser().parse(line);
                                 if (behave)
-                                    PlayerBehavior.behave(aiPlayer, (JSONObject) frames.get(count - 1));
-                                count++;
+                                    PlayerBehavior.behave(aiPlayer, receivedJson);
+                            } catch (ParseException e) {
+                                e.printStackTrace();
                             }
+
+                            /* Sending Player Data */
+                            String outputMessage = new PlayerBehavior(realPlayer, plugin).toString();
+                            // aiPlayer.chat(outputMessage);
+                            writer.println(outputMessage);
+                            count++;
                         }
 
                         startTime = System.currentTimeMillis();
-
-                        timelineJson.put("frames", timelineArray);
-                        String outputMessage = timelineJson.toString();
-                        // aiPlayer.chat(outputMessage);
-                        writer.println(outputMessage);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

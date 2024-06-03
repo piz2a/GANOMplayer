@@ -4,5 +4,5 @@ main: kr.ziho.ganomplayer.GANOMPlayer
 commands:
   ganom:
     description: Manage GANOM AI Players
-    usage: /ganom add <name> <x> <y> <z> (<world>) | /ganom remove <name>
+    usage: /ganom add <name> <x> <y> <z> (<world>) | /ganom remove <name> | /ganom train [start/stop] <ai> <player>
     permission: ganomplayer.ganomcommandpermission
