@@ -15,28 +15,9 @@ import org.json.simple.JSONObject;
 import java.lang.reflect.Field;
 
 
-/*
-input
-- isOnDamage [bool]
-- isOnGround [bool]
-- isSneaking [bool]
-- isSprinting [bool]
-- pitch [float]
-- velocity (yaw-relative) [float, float, float]
-
-output
-- rotation (yaw, pitch) [float, float]
-- velocity (x, y, z) [float, float, float]
-- isSneaking [bool]
-- isSprinting [bool]
-- attackIndex [int]
-*/
-
 public class PlayerBehavior extends JSONObject {
 
-    public static final boolean mirrorTest = true;
-
-    public PlayerBehavior(Player player, GANOMPlayer plugin) {
+    public PlayerBehavior(Player player, GANOMPlayer plugin, Location prevLocation) {
         super();
         put("isOnDamage", plugin.damageMap.get(player.getUniqueId()));
         put("isOnGround", ((LivingEntity) player).isOnGround());
@@ -51,41 +32,46 @@ public class PlayerBehavior extends JSONObject {
         Location location = player.getLocation();
         put("pitch", location.getPitch());
 
-        Vector velocity = player.getVelocity();
+        Vector locationDiff = new Vector(
+                location.getX() - prevLocation.getX(),
+                location.getY() - prevLocation.getY(),
+                location.getZ() - prevLocation.getZ()
+        );
         put("velocity", new JSONArray() {{  // yaw-relative velocity
-            double x = velocity.getX(), z = velocity.getZ();
+            double x = locationDiff.getX(), z = locationDiff.getZ();
             double yaw = location.getYaw();
             double sin = Math.sin(yaw), cos = Math.cos(yaw);
             add(x * cos - z * sin);  // right-side
-            add(velocity.getY());  // y
+            add(locationDiff.getY());  // y
             add(z * cos - x * sin);  // front-side
         }});
     }
 
     // Make player follow the instructions included in jsonObject
-    public static void behave(Player player, JSONObject jsonObject) {
+    public static void behave(Player player, JSONObject jsonObject, boolean mirrorTest) {
         // Sneaking & Sprinting
         player.setSneaking((boolean) jsonObject.get("isSneaking"));
         player.setSprinting((boolean) jsonObject.get("isSprinting"));
 
         // Item in hand
-        player.setItemInHand(ItemLimited.from(((Long) jsonObject.get("itemInHand")).intValue()).toItemStack());
+        // player.setItemInHand(ItemLimited.from(((Long) jsonObject.get("itemInHand")).intValue()).toItemStack());
 
         // Velocity
         JSONArray velocityArray = (JSONArray) jsonObject.get("velocity");
-        float walkSpeed = 1;  // player.getWalkSpeed();
-        Vector newVelocity = new Vector(
-                ((double) velocityArray.get(0)) * walkSpeed,
-                (double) velocityArray.get(1),
-                ((double) velocityArray.get(2)) * walkSpeed
+        Location prevLocation = player.getLocation();
+        Location newLocation = new Location(
+                player.getWorld(),
+                prevLocation.getX() + (double) velocityArray.get(0),
+                prevLocation.getY() + (double) velocityArray.get(1),
+                prevLocation.getZ() + (double) velocityArray.get(2)
         );
-        player.setVelocity(newVelocity);
+        player.teleport(newLocation);
 
         // Rotation + Head Rotation
-        float yaw, pitch;
+        double yaw, pitch;
         if (mirrorTest) {
-            yaw = player.getLocation().getYaw();
-            pitch = (float) jsonObject.get("pitch");
+            yaw = player.getLocation().getYaw();  // Yaw is constant in mirror test
+            pitch = (double) jsonObject.get("pitch");
         } else {
             JSONArray locationArray = (JSONArray) jsonObject.get("rotation");
             yaw = ((Double) locationArray.get(0)).floatValue();
@@ -130,7 +116,7 @@ public class PlayerBehavior extends JSONObject {
         }
     }
 
-    public static byte getFixRotation(float yawPitch){
+    public static byte getFixRotation(double yawPitch){
         return (byte) ((int) (yawPitch * 256.0F / 360.0F));
     }
 

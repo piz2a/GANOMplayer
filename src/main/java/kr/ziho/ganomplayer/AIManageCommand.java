@@ -122,12 +122,14 @@ public class AIManageCommand implements CommandExecutor {
         }
         if (strings[1].equals("start")) {
             Player realPlayer;
+            boolean mirrorTest = false;
             if (strings.length == 3) {
-                if (commandSender instanceof Player)
-                    realPlayer = (Player) commandSender;
-                else return false;
-            } else realPlayer = Bukkit.getPlayer(strings[3]);
-            Connection connection = new Connection(plugin, (Player) aiPlayer.getEntity(), realPlayer);
+                realPlayer = (Player) aiPlayer.getEntity();  // real training
+            } else {
+                realPlayer = Bukkit.getPlayer(strings[3]);  // mirror test
+                mirrorTest = true;
+            };
+            Connection connection = new Connection(plugin, (Player) aiPlayer.getEntity(), realPlayer, mirrorTest);
             try {
                 connection.start();
                 plugin.connections.add(connection);

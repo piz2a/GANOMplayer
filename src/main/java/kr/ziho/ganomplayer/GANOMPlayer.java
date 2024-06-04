@@ -1,6 +1,7 @@
 package kr.ziho.ganomplayer;
 
 import net.citizensnpcs.api.npc.NPC;
+import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -13,6 +14,7 @@ public class GANOMPlayer extends JavaPlugin {
     Vector<NPC> aiPlayers = new Vector<>();
     Vector<Connection> connections = new Vector<>();
     HashMap<UUID, Boolean> damageMap = new HashMap<>();
+    HashMap<UUID, Location> locationMap = new HashMap<>();
 
     @Override
     public void onEnable() {
