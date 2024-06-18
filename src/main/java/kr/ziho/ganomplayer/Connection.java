@@ -10,7 +10,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.concurrent.*;
+import java.util.Scanner;
 
 public class Connection {
 
@@ -67,10 +67,11 @@ public class Connection {
         @Override
         public void run() {
             // running = true;
-            int framesInTimeline = plugin.getConfig().getInt("framesInTimeline");
+            // int framesInTimeline = plugin.getConfig().getInt("framesInTimeline");
             int frameInterval = plugin.getConfig().getInt("frameInterval");
             try (InputStream in = socket.getInputStream(); OutputStream out = socket.getOutputStream()) {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(in), 4096);
+                // BufferedReader reader = new BufferedReader(new InputStreamReader(in), 8192);
+                Scanner reader = new Scanner(in);
                 PrintWriter writer = new PrintWriter(out, true);
                 int serverDownTimer = 0;
 
@@ -80,93 +81,50 @@ public class Connection {
                 writer.println(new PlayerBehavior(realPlayer, plugin, initLocation));
 
                 double startTime = System.currentTimeMillis();
+                double timestamp = startTime;
                 while (running) {
                     // Reconnect if connection was lost
                     // if (!socket.isConnected()) socket.connect(address);
 
-                    int count = 1;
+                    // Wait
+                    while (System.currentTimeMillis() < startTime + frameInterval);
+                    double timestamp2 = System.currentTimeMillis();
+                    System.out.println("Waiting interval: " + (timestamp2 - timestamp));
 
-                    // Send first behavior
-                    writer.println(new PlayerBehavior(realPlayer, plugin, realPlayer.getLocation()));
-                    long timestamp = System.currentTimeMillis();  // Time right after sending data
+                    startTime += frameInterval;  // Here the period ends
 
-                    // Create new JSONObject to send
-                    while (count <= framesInTimeline) {  // iterate 10 times
-                        // This code should be at the top of the loop
-                        if (System.currentTimeMillis() < startTime + frameInterval * count)
-                            continue;
-                        long timestamp2 = System.currentTimeMillis() - timestamp;
-                        System.out.print("Waiting interval: ");
-                        System.out.println(timestamp2);
-
-                        /* Make AI behave */
-                        String line = getLine(reader, frameInterval * 3L / 10);
-                        System.out.print("Receiving interval: ");
-                        System.out.println(System.currentTimeMillis() - timestamp - timestamp2);
-                        try {
-                            if (line == null) {
-                                // this means socket server is down
-                                serverDownTimer++;
-                            } else {
-                                serverDownTimer = 0;
-                                System.out.println("readLine: " + line);
-                                JSONObject receivedJson = (JSONObject) new JSONParser().parse(line);
-                                if (behave)
-                                    PlayerBehavior.behave(aiPlayer, receivedJson, mirrorTest);
-                            }
-                        } catch (ParseException e) {
-                            e.printStackTrace();
+                    /* Make AI behave */
+                    String line = reader.hasNextLine() ? reader.nextLine() : null;
+                    System.out.println("Receiving interval: " + (System.currentTimeMillis() - timestamp2));
+                    try {
+                        if (line == null) {
+                            // this means socket server is down
+                            serverDownTimer++;
+                        } else {
+                            serverDownTimer = 0;
+                            System.out.println("readLine: " + line);
+                            JSONObject receivedJson = (JSONObject) new JSONParser().parse(line);
+                            if (behave)
+                                PlayerBehavior.behave(aiPlayer, receivedJson, mirrorTest);
                         }
-
-                        /* Sending Player Data */
-                        Location prevLocation = plugin.locationMap.get(realPlayer.getUniqueId());
-                        String outputMessage = new PlayerBehavior(realPlayer, plugin, prevLocation).toString();
-                        // aiPlayer.chat(outputMessage);
-                        writer.println(outputMessage);
-                        plugin.locationMap.replace(realPlayer.getUniqueId(), realPlayer.getLocation());
-                        timestamp = System.currentTimeMillis();
-
-                        count++;
+                    } catch (ParseException e) {
+                        e.printStackTrace();
                     }
                     if (serverDownTimer > 30)
                         running = false;
 
-                    startTime += frameInterval;
+                    /* Sending Player Data */
+                    Location prevLocation = plugin.locationMap.get(realPlayer.getUniqueId());
+                    String outputMessage = new PlayerBehavior(realPlayer, plugin, prevLocation).toString();
+                    // aiPlayer.chat(outputMessage);
+                    writer.println(outputMessage);
+                    plugin.locationMap.replace(realPlayer.getUniqueId(), realPlayer.getLocation());
+                    timestamp = System.currentTimeMillis();  // Time right after sending data
                 }
                 socket.close();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        private String getLine(BufferedReader reader, long waitingTime) {
-            String line = null, newLine;
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            while (true) {
-                Callable<String> readLineTask = () -> {
-                    try {
-                        return reader.readLine();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                };
-
-                Future<String> future = executor.submit(readLineTask);
-                try {
-                    newLine = future.get(waitingTime, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    System.out.println("Readline timeout");
-                    // e.printStackTrace();
-                    break;
-                }
-                System.out.println("newLine: " + newLine);
-                if (newLine.isEmpty()) break;
-                line = newLine;
-            }
-
-            executor.shutdown();
-            return line;
         }
     }
 
