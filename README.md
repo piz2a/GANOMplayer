@@ -6,7 +6,8 @@ Minecraft Plugin using GAN
 - [X] Socket connection
 - [X] NPC
 - [ ] Behavior bug fix
-- [ ] SkyWars
+- [ ] Making Java not to close socket when training stops
+- [ ] GAN
 
 #### input
 - isOnDamage [bool]
