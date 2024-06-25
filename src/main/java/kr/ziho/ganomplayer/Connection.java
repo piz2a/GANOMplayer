@@ -2,6 +2,7 @@ package kr.ziho.ganomplayer;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -16,16 +17,16 @@ public class Connection {
 
     private final GANOMPlayer plugin;
     private final Player aiPlayer;
-    private final Player realPlayer;
+    private final Player scannedPlayer;
     private final boolean mirrorTest;
     private Socket socket;
     private SocketAddress address;
     private boolean running = false;
 
-    public Connection(GANOMPlayer plugin, Player aiPlayer, Player realPlayer, boolean mirrorTest) {
+    public Connection(GANOMPlayer plugin, Player aiPlayer, Player scannedPlayer, boolean mirrorTest) {
         this.plugin = plugin;
         this.aiPlayer = aiPlayer;
-        this.realPlayer = realPlayer;  // if mirror test: realPlayer = aiPlayer.
+        this.scannedPlayer = scannedPlayer;  // if mirror test: scannedPlayer = aiPlayer.
         this.mirrorTest = mirrorTest;
     }
 
@@ -69,6 +70,7 @@ public class Connection {
             // running = true;
             // int framesInTimeline = plugin.getConfig().getInt("framesInTimeline");
             int frameInterval = plugin.getConfig().getInt("frameInterval");
+            boolean isDebug = plugin.getConfig().getBoolean("debug");
             try (InputStream in = socket.getInputStream(); OutputStream out = socket.getOutputStream()) {
                 // BufferedReader reader = new BufferedReader(new InputStreamReader(in), 8192);
                 Scanner reader = new Scanner(in);
@@ -76,9 +78,9 @@ public class Connection {
                 int serverDownTimer = 0;
 
                 /* Sending First Player Data */
-                Location initLocation = realPlayer.getLocation();
-                plugin.locationMap.put(realPlayer.getUniqueId(), initLocation);
-                writer.println(new PlayerBehavior(realPlayer, plugin, initLocation));
+                Location initLocation = scannedPlayer.getLocation();
+                plugin.locationMap.put(scannedPlayer.getUniqueId(), initLocation);
+                writer.println(getOutputJson(initLocation));
 
                 double startTime = System.currentTimeMillis();
                 double timestamp = startTime;
@@ -89,20 +91,20 @@ public class Connection {
                     // Wait
                     while (System.currentTimeMillis() < startTime + frameInterval);
                     double timestamp2 = System.currentTimeMillis();
-                    System.out.println("Waiting interval: " + (timestamp2 - timestamp));
+                    if (isDebug) System.out.println("Waiting interval: " + (timestamp2 - timestamp));
 
                     startTime += frameInterval;  // Here the period ends
 
                     /* Make AI behave */
                     String line = reader.hasNextLine() ? reader.nextLine() : null;
-                    System.out.println("Receiving interval: " + (System.currentTimeMillis() - timestamp2));
+                    if (isDebug) System.out.println("Receiving interval: " + (System.currentTimeMillis() - timestamp2));
                     try {
                         if (line == null) {
                             // this means socket server is down
                             serverDownTimer++;
                         } else {
                             serverDownTimer = 0;
-                            System.out.println("readLine: " + line);
+                            if (isDebug) System.out.println("readLine: " + line);
                             JSONObject receivedJson = (JSONObject) new JSONParser().parse(line);
                             if (behave)
                                 PlayerBehavior.behave(aiPlayer, receivedJson, mirrorTest);
@@ -114,11 +116,12 @@ public class Connection {
                         running = false;
 
                     /* Sending Player Data */
-                    Location prevLocation = plugin.locationMap.get(realPlayer.getUniqueId());
-                    String outputMessage = new PlayerBehavior(realPlayer, plugin, prevLocation).toString();
+                    Location prevLocation = plugin.locationMap.get(scannedPlayer.getUniqueId());
+                    JSONObject outputJson = getOutputJson(prevLocation);
+                    String outputMessage = outputJson.toString();
                     // aiPlayer.chat(outputMessage);
                     writer.println(outputMessage);
-                    plugin.locationMap.replace(realPlayer.getUniqueId(), realPlayer.getLocation());
+                    plugin.locationMap.replace(scannedPlayer.getUniqueId(), scannedPlayer.getLocation());
                     timestamp = System.currentTimeMillis();  // Time right after sending data
                 }
                 socket.close();
@@ -126,6 +129,18 @@ public class Connection {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    JSONObject getOutputJson(Location prevLocation) {
+        // return new PlayerBehavior(scannedPlayer, plugin, prevLocation, true);
+        JSONObject outputJson = new JSONObject();
+        outputJson.put("ai", new PlayerBehavior(scannedPlayer, plugin, prevLocation, true));
+        outputJson.put("players", new JSONArray() {{
+            for (Player opponent : aiPlayer.getWorld().getPlayers()) {
+                add(new PlayerBehavior(opponent, plugin, plugin.locationMap.get(opponent.getUniqueId()), false));
+            }
+        }});
+        return outputJson;
     }
 
 }

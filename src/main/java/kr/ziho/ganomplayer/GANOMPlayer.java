@@ -27,6 +27,7 @@ public class GANOMPlayer extends JavaPlugin {
         config.addDefault("port", 25566);
         config.addDefault("framesInTimeline", 10);
         config.addDefault("frameInterval", 200);  // microseconds
+        config.addDefault("debug", false);
         config.options().copyDefaults(true);
         saveConfig();
 

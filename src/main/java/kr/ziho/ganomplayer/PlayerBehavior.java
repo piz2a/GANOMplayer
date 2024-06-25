@@ -5,6 +5,7 @@ import net.minecraft.server.v1_8_R3.PacketPlayOutEntity.PacketPlayOutEntityLook;
 import net.minecraft.server.v1_8_R3.PacketPlayOutEntityHeadRotation;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -17,21 +18,25 @@ import java.lang.reflect.Field;
 
 public class PlayerBehavior extends JSONObject {
 
-    public PlayerBehavior(Player player, GANOMPlayer plugin, Location prevLocation) {
+    public PlayerBehavior(Player player, GANOMPlayer plugin, Location prevLocation, boolean relative) {
         super();
-        put("isOnDamage", plugin.damageMap.get(player.getUniqueId()));
+        Boolean isOnDamage = plugin.damageMap.get(player.getUniqueId());
+        put("isOnDamage", isOnDamage != null && isOnDamage);
         put("isOnGround", ((LivingEntity) player).isOnGround());
         put("isSneaking", player.isSneaking());
         put("isSprinting", player.isSprinting());
 
-        put("lastDamage", player.getLastDamage());
-        put("health", player.getHealth());
+        // put("lastDamage", player.getLastDamage());
+        // put("health", player.getHealth());
 
-        put("itemInHand", ItemLimited.from(player.getItemInHand()).getValue());
+        // put("itemInHand", ItemLimited.from(player.getItemInHand()).getValue());
+
+        Location eyeLocation = player.getEyeLocation();
+        double yaw = eyeLocation.getYaw();
+        if (!relative) put("yaw", yaw);
+        put("pitch", eyeLocation.getPitch());
 
         Location location = player.getLocation();
-        put("pitch", location.getPitch());
-
         Vector locationDiff = new Vector(
                 location.getX() - prevLocation.getX(),
                 location.getY() - prevLocation.getY(),
@@ -39,11 +44,10 @@ public class PlayerBehavior extends JSONObject {
         );
         put("velocity", new JSONArray() {{  // yaw-relative velocity
             double x = locationDiff.getX(), z = locationDiff.getZ();
-            double yaw = location.getYaw();
             double sin = Math.sin(yaw), cos = Math.cos(yaw);
-            add(x * cos - z * sin);  // right-side
+            add(relative ? x * cos - z * sin : x);  // right-side
             add(locationDiff.getY());  // y
-            add(z * cos - x * sin);  // front-side
+            add(relative ? z * cos - x * sin : z);  // front-side
         }});
     }
 
@@ -65,6 +69,10 @@ public class PlayerBehavior extends JSONObject {
                 prevLocation.getY() + (double) velocityArray.get(1),
                 prevLocation.getZ() + (double) velocityArray.get(2)
         );
+        // increase y if teleport destination is not air
+        while (newLocation.getBlock().getType() != Material.AIR && newLocation.getY() <= player.getWorld().getMaxHeight()) {
+            newLocation.add(new Vector(0, 1, 0));
+        }
         player.teleport(newLocation);
 
         // Rotation + Head Rotation
@@ -101,7 +109,7 @@ public class PlayerBehavior extends JSONObject {
             Field field = obj.getClass().getDeclaredField(name);
             field.setAccessible(true);
             field.set(obj, value);
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

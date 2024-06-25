@@ -18,14 +18,16 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerDamage(EntityDamageByEntityEvent e) {
         UUID uuid = e.getEntity().getUniqueId();
-        plugin.damageMap.put(uuid, true);
+        if (!plugin.damageMap.containsKey(uuid))
+            plugin.damageMap.put(uuid, false);
+        plugin.damageMap.replace(uuid, true);
         new Thread(() -> {
             try {
                 TimeUnit.MILLISECONDS.sleep(200);
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
-            plugin.damageMap.put(uuid, false);
+            plugin.damageMap.replace(uuid, false);
         }).start();
     }
 }

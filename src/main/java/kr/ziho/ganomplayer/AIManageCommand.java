@@ -107,12 +107,16 @@ public class AIManageCommand implements CommandExecutor {
     }
 
     private boolean train(CommandSender commandSender, String[] strings) {
-        // Usage: /ganom train start/stop Notch Piz2a
+        // Usage: /ganom train start A (B)
+        //        /ganom train stop A
+        // train using Player named "A" as AI, or create a new AIPlayer named "A" and start training
+        // /ganom train start A => real training
+        // /ganom train start A B => mirror test: make A behave same as B
         if (strings.length != 3 && strings.length != 4) return false;
-        NPC aiPlayer = null;
+        Player aiPlayer = Bukkit.getPlayer(strings[2]);
         for (NPC iter : plugin.aiPlayers) {
             if (strings[2].equals(iter.getName())) {
-                aiPlayer = iter;
+                aiPlayer = (Player) iter.getEntity();
                 break;
             }
         }
@@ -121,15 +125,15 @@ public class AIManageCommand implements CommandExecutor {
             return true;
         }
         if (strings[1].equals("start")) {
-            Player realPlayer;
+            Player scannedPlayer;
             boolean mirrorTest = false;
             if (strings.length == 3) {
-                realPlayer = (Player) aiPlayer.getEntity();  // real training
+                scannedPlayer = aiPlayer;  // real training
             } else {
-                realPlayer = Bukkit.getPlayer(strings[3]);  // mirror test
+                scannedPlayer = Bukkit.getPlayer(strings[3]);  // mirror test
                 mirrorTest = true;
             };
-            Connection connection = new Connection(plugin, (Player) aiPlayer.getEntity(), realPlayer, mirrorTest);
+            Connection connection = new Connection(plugin, aiPlayer, scannedPlayer, mirrorTest);
             try {
                 connection.start();
                 plugin.connections.add(connection);

@@ -5,8 +5,8 @@ Minecraft Plugin using GAN
 ### TODO
 - [X] Socket connection
 - [X] NPC
-- [ ] Behavior bug fix
-- [ ] Making Java not to close socket when training stops
+- [X] Behavior bug fix
+- [X] Making Java not to close socket when training stops
 - [ ] GAN
 
 #### input
