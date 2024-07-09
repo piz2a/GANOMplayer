@@ -80,6 +80,9 @@ public class Connection {
                 /* Sending First Player Data */
                 Location initLocation = scannedPlayer.getLocation();
                 plugin.locationMap.put(scannedPlayer.getUniqueId(), initLocation);
+                for (Player opponent : aiPlayer.getWorld().getPlayers()) {
+                    plugin.locationMap.put(opponent.getUniqueId(), opponent.getLocation());
+                }
                 writer.println(getOutputJson(initLocation));
 
                 double startTime = System.currentTimeMillis();
@@ -122,6 +125,9 @@ public class Connection {
                     // aiPlayer.chat(outputMessage);
                     writer.println(outputMessage);
                     plugin.locationMap.replace(scannedPlayer.getUniqueId(), scannedPlayer.getLocation());
+                    for (Player opponent : aiPlayer.getWorld().getPlayers()) {
+                        plugin.locationMap.replace(opponent.getUniqueId(), opponent.getLocation());
+                    }
                     timestamp = System.currentTimeMillis();  // Time right after sending data
                 }
                 socket.close();
@@ -137,7 +143,7 @@ public class Connection {
         outputJson.put("ai", new PlayerBehavior(scannedPlayer, plugin, prevLocation, true));
         outputJson.put("players", new JSONArray() {{
             for (Player opponent : aiPlayer.getWorld().getPlayers()) {
-                add(new PlayerBehavior(opponent, plugin, plugin.locationMap.get(opponent.getUniqueId()), false));
+                add(new PlayerBehavior(opponent, plugin, plugin.locationMap.get(opponent.getUniqueId()), true));
             }
         }});
         return outputJson;
