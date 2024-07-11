@@ -14,6 +14,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.lang.reflect.Field;
+import java.util.List;
 
 
 public class PlayerBehavior extends JSONObject {
@@ -46,7 +47,7 @@ public class PlayerBehavior extends JSONObject {
             double x = locationDiff.getX(), z = locationDiff.getZ();
             double sin = Math.sin(yaw), cos = Math.cos(yaw);
             add(relative ? x * cos - z * sin : x);  // right-side
-            add(locationDiff.getY());  // y
+            add(locationDiff.getY() > 0 ? 1 : 0);  // y > 0
             add(relative ? z * cos - x * sin : z);  // front-side
         }});
     }
@@ -66,12 +67,13 @@ public class PlayerBehavior extends JSONObject {
         Location newLocation = new Location(
                 player.getWorld(),
                 prevLocation.getX() + (double) velocityArray.get(0),
-                prevLocation.getY() + (double) velocityArray.get(1),
+                prevLocation.getY(),  // + (double) velocityArray.get(1),
                 prevLocation.getZ() + (double) velocityArray.get(2)
         );
         // increase y if teleport destination is not air
         while (newLocation.getBlock().getType() != Material.AIR && newLocation.getY() <= player.getWorld().getMaxHeight()) {
             newLocation.add(new Vector(0, 1, 0));
+            System.out.println("Increasing y");
         }
         player.teleport(newLocation);
 
@@ -102,6 +104,17 @@ public class PlayerBehavior extends JSONObject {
                 true
         ));
         */
+
+        int attackIndex = (int) jsonObject.get("attackIndex");
+        if (attackIndex != -1) {
+            List<Player> playerList = player.getWorld().getPlayers();
+            for (int i = 0; i < playerList.size(); i++) {
+                // Attacks the target player
+                Player targetPlayer = playerList.get(i);
+                targetPlayer.damage(0.5);
+                // Knockback: pass
+            }
+        }
     }
 
     public static void setValue(Object obj, String name, Object value){

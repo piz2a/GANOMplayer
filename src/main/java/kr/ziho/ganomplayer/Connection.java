@@ -43,14 +43,7 @@ public class Connection {
     }
 
     public void stop() {
-        try {
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            writer.println("-1");
-            running = false;
-            // socket.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        running = false;
     }
 
     public boolean isRunning() {
@@ -98,6 +91,8 @@ public class Connection {
 
                     startTime += frameInterval;  // Here the period ends
 
+                    /* If player has logged out: stops training: Incomplete */
+
                     /* Make AI behave */
                     String line = reader.hasNextLine() ? reader.nextLine() : null;
                     if (isDebug) System.out.println("Receiving interval: " + (System.currentTimeMillis() - timestamp2));
@@ -130,7 +125,9 @@ public class Connection {
                     }
                     timestamp = System.currentTimeMillis();  // Time right after sending data
                 }
+                writer.println("-1");
                 socket.close();
+                System.out.println("Training with " + aiPlayer.getName() + " has stopped.");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -143,6 +140,8 @@ public class Connection {
         outputJson.put("ai", new PlayerBehavior(scannedPlayer, plugin, prevLocation, true));
         outputJson.put("players", new JSONArray() {{
             for (Player opponent : aiPlayer.getWorld().getPlayers()) {
+                if (opponent.getUniqueId() == scannedPlayer.getUniqueId())
+                    continue;
                 add(new PlayerBehavior(opponent, plugin, plugin.locationMap.get(opponent.getUniqueId()), true));
             }
         }});
