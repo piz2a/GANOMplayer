@@ -67,12 +67,12 @@ public class PlayerBehavior extends JSONObject {
         Location newLocation = new Location(
                 player.getWorld(),
                 prevLocation.getX() + (double) velocityArray.get(0),
-                prevLocation.getY() + (((LivingEntity) player).isOnGround() ? ((double) velocityArray.get(1)) : 0f),
+                prevLocation.getY() + (((LivingEntity) player).isOnGround() ? ((double) velocityArray.get(1)) : -0.3f),
                 prevLocation.getZ() + (double) velocityArray.get(2)
         );
         // increase y if teleport destination is not air
         while (newLocation.getBlock().getType() != Material.AIR && newLocation.getY() <= player.getWorld().getMaxHeight()) {
-            newLocation.add(new Vector(0, 1, 0));
+            newLocation.add(new Vector(0, 0.1, 0));
             System.out.println("Increasing y");
         }
         player.teleport(newLocation);
@@ -108,12 +108,11 @@ public class PlayerBehavior extends JSONObject {
         Long attackIndex = (Long) jsonObject.get("attackIndex");
         if (attackIndex != -1L) {
             List<Player> playerList = player.getWorld().getPlayers();
-            for (int i = 0; i < playerList.size(); i++) {
-                // Attacks the target player
-                Player targetPlayer = playerList.get(i);
-                targetPlayer.damage(0.5);
-                // Knockback: pass
-            }
+            playerList.remove(player);
+            // Attacks the target player
+            Player targetPlayer = playerList.get(Math.toIntExact(attackIndex));
+            targetPlayer.damage(0.5);
+            // Knockback: pass
         }
     }
 
