@@ -67,7 +67,7 @@ public class PlayerBehavior extends JSONObject {
         Location newLocation = new Location(
                 player.getWorld(),
                 prevLocation.getX() + (double) velocityArray.get(0),
-                prevLocation.getY(),  // + (double) velocityArray.get(1),
+                prevLocation.getY() + (((LivingEntity) player).isOnGround() ? ((double) velocityArray.get(1)) : 0f),
                 prevLocation.getZ() + (double) velocityArray.get(2)
         );
         // increase y if teleport destination is not air
@@ -105,8 +105,8 @@ public class PlayerBehavior extends JSONObject {
         ));
         */
 
-        int attackIndex = (int) jsonObject.get("attackIndex");
-        if (attackIndex != -1) {
+        Long attackIndex = (Long) jsonObject.get("attackIndex");
+        if (attackIndex != -1L) {
             List<Player> playerList = player.getWorld().getPlayers();
             for (int i = 0; i < playerList.size(); i++) {
                 // Attacks the target player
