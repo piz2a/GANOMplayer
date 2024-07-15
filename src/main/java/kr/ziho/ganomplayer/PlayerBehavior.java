@@ -45,8 +45,9 @@ public class PlayerBehavior extends JSONObject {
         );
         put("velocity", new JSONArray() {{  // yaw-relative velocity
             double x = locationDiff.getX(), z = locationDiff.getZ();
-            double sin = Math.sin(yaw), cos = Math.cos(yaw);
-            add(relative ? x * cos - z * sin : x);  // right-side
+            // Converting absolute velocity(v_x, v_z) to yaw-relative velocity(v_right, v_front)
+            double sin = Math.sin(Math.toRadians(yaw)), cos = Math.cos(Math.toRadians(yaw));
+            add(relative ? - x * cos - z * sin : x);  // right-side
             add(locationDiff.getY() > 0 ? 1 : 0);  // y > 0
             add(relative ? z * cos - x * sin : z);  // front-side
         }});
@@ -60,22 +61,6 @@ public class PlayerBehavior extends JSONObject {
 
         // Item in hand
         // player.setItemInHand(ItemLimited.from(((Long) jsonObject.get("itemInHand")).intValue()).toItemStack());
-
-        // Velocity
-        JSONArray velocityArray = (JSONArray) jsonObject.get("velocity");
-        Location prevLocation = player.getLocation();
-        Location newLocation = new Location(
-                player.getWorld(),
-                prevLocation.getX() + (double) velocityArray.get(0),
-                prevLocation.getY() + (((LivingEntity) player).isOnGround() ? ((double) velocityArray.get(1)) : -0.3f),
-                prevLocation.getZ() + (double) velocityArray.get(2)
-        );
-        // increase y if teleport destination is not air
-        while (newLocation.getBlock().getType() != Material.AIR && newLocation.getY() <= player.getWorld().getMaxHeight()) {
-            newLocation.add(new Vector(0, 0.1, 0));
-            System.out.println("Increasing y");
-        }
-        player.teleport(newLocation);
 
         // Rotation + Head Rotation
         double yaw, pitch;
@@ -105,12 +90,35 @@ public class PlayerBehavior extends JSONObject {
         ));
         */
 
+        // Velocity (Yaw-relative)
+        JSONArray velocityArray = (JSONArray) jsonObject.get("velocity");
+        double vr = (double) velocityArray.get(0), vf = (double) velocityArray.get(2);
+        double sin = Math.sin(Math.toRadians(yaw)), cos = Math.cos(Math.toRadians(yaw));
+        // Converting yaw-relative velocity(v_right, v_front) to absolute velocity(v_x, v_z)
+        double vx = - vr * cos - vf * sin, vz = vf * cos - vr * sin;
+        Location prevLocation = player.getLocation();
+        Location newLocation = new Location(
+                player.getWorld(),
+                prevLocation.getX() + vx,
+                prevLocation.getY() + (((LivingEntity) player).isOnGround() ? ((double) velocityArray.get(1)) : -0.3f),
+                prevLocation.getZ() + vz
+        );
+        // increase y if teleport destination is not air
+        while (newLocation.getBlock().getType() != Material.AIR && newLocation.getY() <= player.getWorld().getMaxHeight()) {
+            newLocation = newLocation.add(new Vector(0, 0.1, 0));
+            System.out.println("Increasing y");
+        }
+        player.teleport(newLocation);
+
+        // Attack other player
         Long attackIndex = (Long) jsonObject.get("attackIndex");
         if (attackIndex != -1L) {
             List<Player> playerList = player.getWorld().getPlayers();
-            playerList.remove(player);
+            playerList.removeIf(worldPlayer -> worldPlayer.getUniqueId() == player.getUniqueId());
             // Attacks the target player
             Player targetPlayer = playerList.get(Math.toIntExact(attackIndex));
+            // Vector locationDiff = targetPlayer.getLocation().subtract(player.getLocation()).toVector();
+            // locationDiff.multiply(0.5);
             targetPlayer.damage(0.5);
             // Knockback: pass
         }
