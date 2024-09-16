@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.Vector;
@@ -15,6 +16,9 @@ public class GANOMPlayer extends JavaPlugin {
     Vector<Connection> connections = new Vector<>();
     HashMap<UUID, Boolean> damageMap = new HashMap<>();
     HashMap<UUID, Location> locationMap = new HashMap<>();
+    HashMap<UUID, Socket> socketMap = new HashMap<>();
+    HashMap<UUID, Double> yawMap = new HashMap<>();
+    HashMap<UUID, Double> pitchMap = new HashMap<>();
 
     @Override
     public void onEnable() {

@@ -19,8 +19,8 @@ public class Connection {
     private final Player aiPlayer;
     private final Player scannedPlayer;
     private final boolean mirrorTest;
-    private Socket socket;
-    private SocketAddress address;
+    private final int PORT = 25567;
+    private Socket socket, modSocket;
     private boolean running = false;
 
     public Connection(GANOMPlayer plugin, Player aiPlayer, Player scannedPlayer, boolean mirrorTest) {
@@ -32,8 +32,24 @@ public class Connection {
 
     public void start() throws IOException {
         socket = new Socket();
-        address = new InetSocketAddress(plugin.getConfig().getString("host"), plugin.getConfig().getInt("port"));
+        SocketAddress address = new InetSocketAddress(plugin.getConfig().getString("host"), plugin.getConfig().getInt("port"));
         socket.connect(address);
+
+        // Socket for AI
+        modSocket = new Socket();
+        InetSocketAddress modAddress = new InetSocketAddress("127.0.0.1", PORT);
+        modSocket.connect(modAddress);
+
+        // Socket for real player
+        int index = 1;
+        for (Player opponent : aiPlayer.getWorld().getPlayers()) {
+            if (opponent.equals(aiPlayer)) continue;
+            Socket opponentSocket = new Socket();
+            int opponentPort = PORT + index++;
+            opponentSocket.connect(new InetSocketAddress("127.0.0.1", opponentPort));
+            System.out.println("Connecting port " + opponentPort + " for player " + opponent.getName());
+            plugin.socketMap.put(opponent.getUniqueId(), opponentSocket);
+        }
 
         System.out.println("Connection Type: " + (mirrorTest ? "Mirror Test" : "Training"));
 
@@ -56,15 +72,16 @@ public class Connection {
 
     private class SocketThread implements Runnable {
 
-        boolean behave = true;  // false;  // Now forge mod makes ai player behave
-
         @Override
         public void run() {
             // running = true;
             // int framesInTimeline = plugin.getConfig().getInt("framesInTimeline");
             int frameInterval = plugin.getConfig().getInt("frameInterval");
             boolean isDebug = plugin.getConfig().getBoolean("debug");
-            try (InputStream in = socket.getInputStream(); OutputStream out = socket.getOutputStream()) {
+            try (
+                InputStream in = socket.getInputStream(); OutputStream out = socket.getOutputStream();
+                InputStream modIn = modSocket.getInputStream(); OutputStream modOut = modSocket.getOutputStream();
+            ) {
                 // BufferedReader reader = new BufferedReader(new InputStreamReader(in), 8192);
                 Scanner reader = new Scanner(in);
                 PrintWriter writer = new PrintWriter(out, true);
@@ -76,7 +93,7 @@ public class Connection {
                 for (Player opponent : aiPlayer.getWorld().getPlayers()) {
                     plugin.locationMap.put(opponent.getUniqueId(), opponent.getLocation());
                 }
-                writer.println(getOutputJson(initLocation));
+                writer.println(getOutputJson(initLocation, modIn, modOut));
 
                 double startTime = System.currentTimeMillis();
                 double timestamp = startTime;
@@ -104,8 +121,7 @@ public class Connection {
                             serverDownTimer = 0;
                             if (isDebug) System.out.println("readLine: " + line);
                             JSONObject receivedJson = (JSONObject) new JSONParser().parse(line);
-                            if (behave)
-                                PlayerBehavior.behave(aiPlayer, receivedJson, mirrorTest);
+                            PlayerBehavior.behave(aiPlayer, receivedJson, modOut, mirrorTest);
                         }
                     } catch (ParseException e) {
                         e.printStackTrace();
@@ -115,7 +131,7 @@ public class Connection {
 
                     /* Sending Player Data */
                     Location prevLocation = plugin.locationMap.get(scannedPlayer.getUniqueId());
-                    JSONObject outputJson = getOutputJson(prevLocation);
+                    JSONObject outputJson = getOutputJson(prevLocation, modIn, modOut);
                     String outputMessage = outputJson.toString();
                     // aiPlayer.chat(outputMessage);
                     writer.println(outputMessage);
@@ -134,18 +150,33 @@ public class Connection {
         }
     }
 
-    JSONObject getOutputJson(Location prevLocation) {
+    JSONObject getOutputJson(Location prevLocation, InputStream modIn, OutputStream modOut) throws IOException {
         // return new PlayerBehavior(scannedPlayer, plugin, prevLocation, true);
         JSONObject outputJson = new JSONObject();
-        outputJson.put("ai", new PlayerBehavior(scannedPlayer, plugin, prevLocation, true));
+        outputJson.put("ai", new PlayerBehavior(scannedPlayer, plugin, requestKeyLog(modIn, modOut), prevLocation, true));
         outputJson.put("players", new JSONArray() {{
             for (Player opponent : aiPlayer.getWorld().getPlayers()) {
                 if (opponent.getUniqueId() == scannedPlayer.getUniqueId())
                     continue;
-                add(new PlayerBehavior(opponent, plugin, plugin.locationMap.get(opponent.getUniqueId()), true));
+                Socket opponentSocket = plugin.socketMap.get(opponent.getUniqueId());
+                InputStream opponentIn = opponentSocket.getInputStream();
+                OutputStream opponentOut = opponentSocket.getOutputStream();
+                add(new PlayerBehavior(opponent, plugin, requestKeyLog(opponentIn, opponentOut), plugin.locationMap.get(opponent.getUniqueId()), true));
             }
         }});
         return outputJson;
+    }
+
+    private int requestKeyLog(InputStream in, OutputStream out) {
+        PrintWriter modWriter = new PrintWriter(out, true);
+        modWriter.println("keylog");
+        Scanner modScanner = new Scanner(in);
+        while (!modScanner.hasNextLine());  // Wait
+        String line = modScanner.nextLine();
+        int Space = line.charAt(0) == '1' ? 1 : 0;
+        int WSmove = (line.charAt(1) == '1' ? 1 : 0) - (line.charAt(3) == '1' ? 1 : 0);
+        int ADmove = (line.charAt(2) == '1' ? 1 : 0) - (line.charAt(4) == '1' ? 1 : 0);
+        return Space * 4 + WSmove * 2 + ADmove;
     }
 
 }
