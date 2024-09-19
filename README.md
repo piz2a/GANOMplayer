@@ -14,21 +14,25 @@ Minecraft Plugin using GAN
 {
     "ai": [
       {
-        "WSmove": 1,  // 0 or 1
+        "WSmove": 1,
         "ADmove": 0,
         "Space": 0,
         "Ctrl": 1,
         "Shift": 0,
-        "DelYaw": 15.433,  // degrees/frame
-        "DelPitch": 9.467,  // degrees/frame
-        "Attack": -1  // -1 or 0
+        "DelYaw": 15.433,
+        "DelPitch": 9.467,
+        "Attack": -1
       }
     ],
-    "player": [
+    "players": [
       "same format as above"
     ]
 }
 ```
+* WSMove/ADmove: -1, 0, 1
+* Space, Ctrl, Shift: 0, 1
+* DelYaw, DelPitch: float [degrees/frame]
+* Attack: -1, 0
 <!--
 ### previous format
 

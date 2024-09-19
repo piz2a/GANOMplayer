@@ -74,8 +74,6 @@ public class Connection {
 
         @Override
         public void run() {
-            // running = true;
-            // int framesInTimeline = plugin.getConfig().getInt("framesInTimeline");
             int frameInterval = plugin.getConfig().getInt("frameInterval");
             boolean isDebug = plugin.getConfig().getBoolean("debug");
             try (
@@ -88,20 +86,25 @@ public class Connection {
                 int serverDownTimer = 0;
 
                 /* Sending First Player Data */
+                if (isDebug) System.out.println("Sending First Player Data");
                 Location initLocation = scannedPlayer.getLocation();
                 plugin.locationMap.put(scannedPlayer.getUniqueId(), initLocation);
                 for (Player opponent : aiPlayer.getWorld().getPlayers()) {
                     plugin.locationMap.put(opponent.getUniqueId(), opponent.getLocation());
                 }
-                writer.println(getOutputJson(initLocation, modIn, modOut));
+                JSONObject outputJson = getOutputJson(initLocation, modIn, modOut);
+                System.out.println("First data: " + outputJson.toString());
+                writer.println(outputJson);
 
                 double startTime = System.currentTimeMillis();
                 double timestamp = startTime;
+                if (isDebug) System.out.println("Loop start");
                 while (running) {
                     // Reconnect if connection was lost
                     // if (!socket.isConnected()) socket.connect(address);
 
                     // Wait
+                    if (isDebug) System.out.println("Waiting...");
                     while (System.currentTimeMillis() < startTime + frameInterval);
                     double timestamp2 = System.currentTimeMillis();
                     if (isDebug) System.out.println("Waiting interval: " + (timestamp2 - timestamp));
@@ -111,6 +114,7 @@ public class Connection {
                     /* If player has logged out: stops training: Incomplete */
 
                     /* Make AI behave */
+                    if (isDebug) System.out.println("Receiving...");
                     String line = reader.hasNextLine() ? reader.nextLine() : null;
                     if (isDebug) System.out.println("Receiving interval: " + (System.currentTimeMillis() - timestamp2));
                     try {
@@ -121,6 +125,7 @@ public class Connection {
                             serverDownTimer = 0;
                             if (isDebug) System.out.println("readLine: " + line);
                             JSONObject receivedJson = (JSONObject) new JSONParser().parse(line);
+                            if (isDebug) System.out.println("Behaving");
                             PlayerBehavior.behave(aiPlayer, receivedJson, modOut, mirrorTest);
                         }
                     } catch (ParseException e) {
@@ -130,8 +135,9 @@ public class Connection {
                         running = false;
 
                     /* Sending Player Data */
+                    if (isDebug) System.out.println("Sending Player Data");
                     Location prevLocation = plugin.locationMap.get(scannedPlayer.getUniqueId());
-                    JSONObject outputJson = getOutputJson(prevLocation, modIn, modOut);
+                    outputJson = getOutputJson(prevLocation, modIn, modOut);
                     String outputMessage = outputJson.toString();
                     // aiPlayer.chat(outputMessage);
                     writer.println(outputMessage);
@@ -153,7 +159,7 @@ public class Connection {
     JSONObject getOutputJson(Location prevLocation, InputStream modIn, OutputStream modOut) throws IOException {
         // return new PlayerBehavior(scannedPlayer, plugin, prevLocation, true);
         JSONObject outputJson = new JSONObject();
-        outputJson.put("ai", new PlayerBehavior(scannedPlayer, plugin, requestKeyLog(modIn, modOut), prevLocation, true));
+        JSONObject aiBehavior = new PlayerBehavior(scannedPlayer, plugin, requestKeyLog(modIn, modOut), prevLocation);
         outputJson.put("players", new JSONArray() {{
             for (Player opponent : aiPlayer.getWorld().getPlayers()) {
                 if (opponent.getUniqueId() == scannedPlayer.getUniqueId())
@@ -161,9 +167,16 @@ public class Connection {
                 Socket opponentSocket = plugin.socketMap.get(opponent.getUniqueId());
                 InputStream opponentIn = opponentSocket.getInputStream();
                 OutputStream opponentOut = opponentSocket.getOutputStream();
-                add(new PlayerBehavior(opponent, plugin, requestKeyLog(opponentIn, opponentOut), plugin.locationMap.get(opponent.getUniqueId()), true));
+                JSONObject realBehavior = new PlayerBehavior(opponent, plugin, requestKeyLog(opponentIn, opponentOut), plugin.locationMap.get(opponent.getUniqueId()));
+                // Swap Attack
+                int aiIsOnDamage = (int) aiBehavior.get("Attack");
+                int realIsOnDamage = (int) realBehavior.get("Attack");
+                aiBehavior.replace("Attack", realIsOnDamage);
+                realBehavior.replace("Attack", aiIsOnDamage);
+                add(realBehavior);
             }
         }});
+        outputJson.put("ai", aiBehavior);
         return outputJson;
     }
 

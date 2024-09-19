@@ -22,17 +22,15 @@ import java.util.List;
 
 public class PlayerBehavior extends JSONObject {
 
-    public PlayerBehavior(Player player, GANOMPlayer plugin, int keyLog, Location prevLocation, boolean relative) {
+    public PlayerBehavior(Player player, GANOMPlayer plugin, int keyLog, Location prevLocation) {
         super();
-        // Boolean isOnDamage = plugin.damageMap.get(player.getUniqueId());
-        // put("isOnDamage", isOnDamage != null && isOnDamage);
+        Boolean isOnDamage = plugin.damageMap.get(player.getUniqueId());
+        put("Attack", (isOnDamage != null && isOnDamage) ? 0 : -1);  // This will be swapped
         // put("isOnGround", ((LivingEntity) player).isOnGround());
-        put("Shift", player.isSneaking());
-        put("Ctrl", player.isSprinting());
-
+        put("Shift", player.isSneaking() ? 1 : 0);
+        put("Ctrl", player.isSprinting() ? 1 : 0);
         // put("lastDamage", player.getLastDamage());
         // put("health", player.getHealth());
-
         // put("itemInHand", ItemLimited.from(player.getItemInHand()).getValue());
 
         Location eyeLocation = player.getEyeLocation();
@@ -47,7 +45,7 @@ public class PlayerBehavior extends JSONObject {
         if (plugin.pitchMap.containsKey(player.getUniqueId()))
             plugin.pitchMap.put(player.getUniqueId(), pitch);
         else plugin.pitchMap.replace(player.getUniqueId(), pitch);
-        if (!relative) put("DelYaw", yaw - prevYaw);
+        put("DelYaw", yaw - prevYaw);
         put("DelPitch", pitch - prevPitch);
 
         // should be 1 or 0
