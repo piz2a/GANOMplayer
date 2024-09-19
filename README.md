@@ -21,17 +21,19 @@ Minecraft Plugin using GAN
         "Shift": 0,
         "DelYaw": 15.433,
         "DelPitch": 9.467,
+        "Pitch": 91.45,
         "Attack": -1
       }
     ],
     "players": [
-      "same format as above"
+      "almost same format as above",
+      "excluding Pitch"
     ]
 }
 ```
 * WSMove/ADmove: -1, 0, 1
 * Space, Ctrl, Shift: 0, 1
-* DelYaw, DelPitch: float [degrees/frame]
+* DelYaw, DelPitch, Pitch(input only): float [degrees/frame]
 * Attack: -1, 0
 <!--
 ### previous format

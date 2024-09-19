@@ -1,22 +1,11 @@
 package kr.ziho.ganomplayer;
 
-import net.minecraft.server.v1_8_R3.Packet;
-import net.minecraft.server.v1_8_R3.PacketPlayOutEntity.PacketPlayOutEntityLook;
-import net.minecraft.server.v1_8_R3.PacketPlayOutEntityHeadRotation;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.util.List;
 
 
@@ -26,12 +15,8 @@ public class PlayerBehavior extends JSONObject {
         super();
         Boolean isOnDamage = plugin.damageMap.get(player.getUniqueId());
         put("Attack", (isOnDamage != null && isOnDamage) ? 0 : -1);  // This will be swapped
-        // put("isOnGround", ((LivingEntity) player).isOnGround());
         put("Shift", player.isSneaking() ? 1 : 0);
         put("Ctrl", player.isSprinting() ? 1 : 0);
-        // put("lastDamage", player.getLastDamage());
-        // put("health", player.getHealth());
-        // put("itemInHand", ItemLimited.from(player.getItemInHand()).getValue());
 
         Location eyeLocation = player.getEyeLocation();
         double yaw = eyeLocation.getYaw();
@@ -47,27 +32,12 @@ public class PlayerBehavior extends JSONObject {
         else plugin.pitchMap.replace(player.getUniqueId(), pitch);
         put("DelYaw", yaw - prevYaw);
         put("DelPitch", pitch - prevPitch);
+        put("Pitch", pitch);
 
         // should be 1 or 0
         put("Space", keyLog / 4);
         put("WSmove", (keyLog % 4) / 2);
         put("ADmove", keyLog % 2);
-        /*
-        Location location = player.getLocation();
-        Vector locationDiff = new Vector(
-                location.getX() - prevLocation.getX(),
-                location.getY() - prevLocation.getY(),
-                location.getZ() - prevLocation.getZ()
-        );
-        put("velocity", new JSONArray() {{  // yaw-relative velocity
-            double x = locationDiff.getX(), z = locationDiff.getZ();
-            // Converting absolute velocity(v_x, v_z) to yaw-relative velocity(v_right, v_front)
-            double sin = Math.sin(Math.toRadians(yaw)), cos = Math.cos(Math.toRadians(yaw));
-            add(relative ? - x * cos - z * sin : x);  // right-side
-            add(locationDiff.getY() > 0 ? 1 : 0);  // y > 0
-            add(relative ? z * cos - x * sin : z);  // front-side
-        }});
-        */
     }
 
     // Make player follow the instructions included in jsonObject
@@ -75,31 +45,6 @@ public class PlayerBehavior extends JSONObject {
         // Sneaking & Sprinting
         player.setSneaking((boolean) jsonObject.get("Shift"));
         player.setSprinting((boolean) jsonObject.get("Ctrl"));
-
-        // Item in hand
-        // player.setItemInHand(ItemLimited.from(((Long) jsonObject.get("itemInHand")).intValue()).toItemStack());
-
-        // Rotation + Head Rotation
-        /*
-        double yaw, pitch;
-        if (mirrorTest) {
-            yaw = player.getLocation().getYaw();  // Yaw is constant in mirror test
-            pitch = (double) jsonObject.get("pitch");
-        } else {
-            float dyaw = ((Double) jsonObject.get("DelYaw")).floatValue();
-            float dpitch = ((Double) jsonObject.get("DelPitch")).floatValue();
-            yaw = dyaw + player.getLocation().getYaw();
-            pitch = dpitch + player.getLocation().getPitch();
-        }
-
-        int entityID = player.getEntityId();
-        PacketPlayOutEntityLook packet = new PacketPlayOutEntityLook(entityID, getFixRotation(yaw), getFixRotation(pitch), true);
-        PacketPlayOutEntityHeadRotation packetHead = new PacketPlayOutEntityHeadRotation();
-        setValue(packetHead, "a", entityID);
-        setValue(packetHead, "b", getFixRotation(yaw));
-        sendPacket(packet);
-        sendPacket(packetHead);
-        */
 
         // WASD Moves and Rotation
         PrintWriter modWriter = new PrintWriter(modOut, true);
@@ -117,30 +62,6 @@ public class PlayerBehavior extends JSONObject {
             targetPlayer.damage(0.5);
             // Knockback: pass
         }
-    }
-
-    public static void setValue(Object obj, String name, Object value){
-        try {
-            Field field = obj.getClass().getDeclaredField(name);
-            field.setAccessible(true);
-            field.set(obj, value);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void sendPacket(Packet<?> packet, Player player){
-        ((CraftPlayer)player).getHandle().playerConnection.sendPacket(packet);
-    }
-
-    public static void sendPacket(Packet<?> packet){
-        for (Player player : Bukkit.getOnlinePlayers()){
-            sendPacket(packet, player);
-        }
-    }
-
-    public static byte getFixRotation(double yawPitch){
-        return (byte) ((int) (yawPitch * 256.0F / 360.0F));
     }
 
 }
