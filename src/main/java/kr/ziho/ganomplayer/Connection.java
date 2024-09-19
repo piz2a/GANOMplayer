@@ -87,12 +87,7 @@ public class Connection {
 
                 /* Sending First Player Data */
                 if (isDebug) System.out.println("Sending First Player Data");
-                Location initLocation = scannedPlayer.getLocation();
-                plugin.locationMap.put(scannedPlayer.getUniqueId(), initLocation);
-                for (Player opponent : aiPlayer.getWorld().getPlayers()) {
-                    plugin.locationMap.put(opponent.getUniqueId(), opponent.getLocation());
-                }
-                JSONObject outputJson = getOutputJson(initLocation, modIn, modOut);
+                JSONObject outputJson = getOutputJson(modIn, modOut);
                 System.out.println("First data: " + outputJson.toString());
                 writer.println(outputJson);
 
@@ -136,15 +131,10 @@ public class Connection {
 
                     /* Sending Player Data */
                     if (isDebug) System.out.println("Sending Player Data");
-                    Location prevLocation = plugin.locationMap.get(scannedPlayer.getUniqueId());
-                    outputJson = getOutputJson(prevLocation, modIn, modOut);
+                    outputJson = getOutputJson(modIn, modOut);
                     String outputMessage = outputJson.toString();
                     // aiPlayer.chat(outputMessage);
                     writer.println(outputMessage);
-                    plugin.locationMap.replace(scannedPlayer.getUniqueId(), scannedPlayer.getLocation());
-                    for (Player opponent : aiPlayer.getWorld().getPlayers()) {
-                        plugin.locationMap.replace(opponent.getUniqueId(), opponent.getLocation());
-                    }
                     timestamp = System.currentTimeMillis();  // Time right after sending data
                 }
                 writer.println("-1");
@@ -156,10 +146,10 @@ public class Connection {
         }
     }
 
-    JSONObject getOutputJson(Location prevLocation, InputStream modIn, OutputStream modOut) throws IOException {
+    JSONObject getOutputJson(InputStream modIn, OutputStream modOut) throws IOException {
         // return new PlayerBehavior(scannedPlayer, plugin, prevLocation, true);
         JSONObject outputJson = new JSONObject();
-        JSONObject aiBehavior = new PlayerBehavior(scannedPlayer, plugin, requestKeyLog(modIn, modOut), prevLocation);
+        JSONObject aiBehavior = new PlayerBehavior(scannedPlayer, plugin, requestKeyLog(modIn, modOut));
         outputJson.put("players", new JSONArray() {{
             for (Player opponent : aiPlayer.getWorld().getPlayers()) {
                 if (opponent.getUniqueId() == scannedPlayer.getUniqueId())
@@ -167,7 +157,7 @@ public class Connection {
                 Socket opponentSocket = plugin.socketMap.get(opponent.getUniqueId());
                 InputStream opponentIn = opponentSocket.getInputStream();
                 OutputStream opponentOut = opponentSocket.getOutputStream();
-                JSONObject realBehavior = new PlayerBehavior(opponent, plugin, requestKeyLog(opponentIn, opponentOut), plugin.locationMap.get(opponent.getUniqueId()));
+                JSONObject realBehavior = new PlayerBehavior(opponent, plugin, requestKeyLog(opponentIn, opponentOut));
                 // Swap Attack
                 int aiIsOnDamage = (int) aiBehavior.get("Attack");
                 int realIsOnDamage = (int) realBehavior.get("Attack");

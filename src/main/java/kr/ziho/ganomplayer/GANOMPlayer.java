@@ -15,7 +15,6 @@ public class GANOMPlayer extends JavaPlugin {
     Vector<NPC> aiPlayers = new Vector<>();
     Vector<Connection> connections = new Vector<>();
     HashMap<UUID, Boolean> damageMap = new HashMap<>();
-    HashMap<UUID, Location> locationMap = new HashMap<>();
     HashMap<UUID, Socket> socketMap = new HashMap<>();
     HashMap<UUID, Double> yawMap = new HashMap<>();
     HashMap<UUID, Double> pitchMap = new HashMap<>();

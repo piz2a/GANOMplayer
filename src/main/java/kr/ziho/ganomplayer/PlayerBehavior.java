@@ -22,7 +22,7 @@ import java.util.List;
 
 public class PlayerBehavior extends JSONObject {
 
-    public PlayerBehavior(Player player, GANOMPlayer plugin, int keyLog, Location prevLocation) {
+    public PlayerBehavior(Player player, GANOMPlayer plugin, int keyLog) {
         super();
         Boolean isOnDamage = plugin.damageMap.get(player.getUniqueId());
         put("Attack", (isOnDamage != null && isOnDamage) ? 0 : -1);  // This will be swapped
@@ -80,6 +80,7 @@ public class PlayerBehavior extends JSONObject {
         // player.setItemInHand(ItemLimited.from(((Long) jsonObject.get("itemInHand")).intValue()).toItemStack());
 
         // Rotation + Head Rotation
+        /*
         double yaw, pitch;
         if (mirrorTest) {
             yaw = player.getLocation().getYaw();  // Yaw is constant in mirror test
@@ -98,25 +99,11 @@ public class PlayerBehavior extends JSONObject {
         setValue(packetHead, "b", getFixRotation(yaw));
         sendPacket(packet);
         sendPacket(packetHead);
-
-        // Velocity (Yaw-relative)
-        /*
-        JSONArray velocityArray = (JSONArray) jsonObject.get("velocity");
-        Location newLocation = getNewLocation(player, velocityArray, yaw);
-        // increase y if teleport destination is not air
-        while (newLocation.getBlock().getType() != Material.AIR && newLocation.getY() <= player.getWorld().getMaxHeight()) {
-            newLocation = newLocation.add(new Vector(0, 0.1, 0));
-            System.out.println("Increasing y");
-        }
-        player.teleport(newLocation);
         */
 
-        // WASD Moves
-        JSONObject modJson = new JSONObject();
-        modJson.put("strafe", jsonObject.get("ADmove"));
-        modJson.put("forward", jsonObject.get("WSmove"));
+        // WASD Moves and Rotation
         PrintWriter modWriter = new PrintWriter(modOut, true);
-        modWriter.println(modJson);
+        modWriter.println(jsonObject);
 
         // Attack other player
         Long attackIndex = (Long) jsonObject.get("Attack");
@@ -130,21 +117,6 @@ public class PlayerBehavior extends JSONObject {
             targetPlayer.damage(0.5);
             // Knockback: pass
         }
-    }
-
-    private static Location getNewLocation(Player player, JSONArray velocityArray, double yaw) {
-        double vr = (double) velocityArray.get(0), vf = (double) velocityArray.get(2);
-        double sin = Math.sin(Math.toRadians(yaw)), cos = Math.cos(Math.toRadians(yaw));
-        // Converting yaw-relative velocity(v_right, v_front) to absolute velocity(v_x, v_z)
-        double vx = - vr * cos - vf * sin, vz = vf * cos - vr * sin;
-        Location prevLocation = player.getLocation();
-        Location newLocation = new Location(
-                player.getWorld(),
-                prevLocation.getX() + vx,
-                prevLocation.getY() + (((LivingEntity) player).isOnGround() ? ((double) velocityArray.get(1)) : -0.3f),
-                prevLocation.getZ() + vz
-        );
-        return newLocation;
     }
 
     public static void setValue(Object obj, String name, Object value){
