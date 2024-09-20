@@ -26,11 +26,11 @@ Minecraft Plugin using GAN
       }
     ],
     "players": [
-      "almost same format as above",
-      "excluding Pitch"
+      "same format as above"
     ]
 }
 ```
+In output of the generator: there is no "Pitch" in the JSON format above
 * WSMove/ADmove: -1, 0, 1
 * Space, Ctrl, Shift: 0, 1
 * DelYaw, DelPitch, Pitch(input only): float [degrees/frame]
